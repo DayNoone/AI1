@@ -32,12 +32,17 @@ def objective_function(p):
     for n in diags:
         if sum(n) > K:
             penalty += 1
- 
+
+    #Rating returns 1 for an optimal solution and less
+    # for a suboptimal solution with more conflicts
     rating = 1.0 / (1.0 + penalty)
     return rating
  
  
 def generateNeighbors(p):
+    # Neighbors are only created based on conflicting row and columns, not diagonals
+    # Conflicts in diagonals are taken into account in the objective_function
+
     neighbors = []
     conflictEggs = []
  
@@ -55,7 +60,8 @@ def generateNeighbors(p):
         else:
         #Clear conflict-eggs when the row is not a conflict-row
             conflictEggs = []
- 
+
+    #Moving a conflict-egg to another column
     for i in conflictEggs:
         for row in range(len(p[0])):
             child = copy.deepcopy(p)
@@ -83,7 +89,8 @@ def generateNeighbors(p):
         #Clear conflict-eggs when the column is not a conflict-column
         else:
             conflictEggs = []
- 
+
+    #Moving a conflict-egg to another row
     for i in conflictEggs:
         for column in range(len(p[0])):
             child = copy.deepcopy(p)
@@ -93,13 +100,17 @@ def generateNeighbors(p):
             if child[i[0]][column] == 0 and column != i[1]:
                 child[i[0]][column] = 1
                 neighbors.append(child)
- 
+
+    #If no neighbors are found and the objective_function does not return 1
+    # we have a conflict in diagonals
     if len(neighbors) == 0:
         neighbors.append(generateRandomBoard(N, K*N))
     return neighbors
  
  
 def findBestNeighbor(neighbors):
+    #Selects the best neighbor in the list neighbours based
+    # on the objective function and setting it to pMax
     bestValue = 0
     pMax = None
     for i in range(len(neighbors)):
@@ -133,17 +144,22 @@ def generateRandomBoard(sizeOfBoard, noOfEggs):
  
  
 def SA():
+    #Starting with a random board
     state = generateRandomBoard(N, K*N)
     temp = tempMax
- 
-    while temp > 0.02:
+
+    #Main loop
+    while temp > dT:
         if objective_function(state) == 1:
+
+            #Printing solution and value when
+            # an optimal solution is found
             for a in state:
                 print a
             print objective_function(state)
             print
             return 1
- 
+
         else:
             neighbors = generateNeighbors(state)
             pMax = findBestNeighbor(neighbors)
@@ -152,16 +168,19 @@ def SA():
  
             p = getNewP(q, temp)
  
-            x = random.randint(0, fTarget)
- 
+            x = random.random()
+
             if x > p:
                 state = pMax
+
+            # A random neighbor is choosen if the
+            # temperature is low enough
             else:
                 if len(neighbors) == 1:
-                    p = neighbors[0]
+                    state = neighbors[0]
                 else:
                     neighbors.remove(pMax)
-                    p = neighbors[random.randint(0, len(neighbors) - 1)]
+                    state = neighbors[random.randint(0, len(neighbors) - 1)]
  
             temp -= dT
     for a in state:
@@ -172,13 +191,15 @@ def SA():
  
 # MAIN
 N = 10
-M = N
 K = 3
-tempMax = 10.0
-fTarget = 10.0
-dT = 0.02
+M = N
+tempMax = 1.0
+dT = 0.002
+
+#Runs the code several times and the amount of optimal solutions found
 counter = 0
-for i in range(50):
+runs = 100
+for i in range(runs):
     if SA() == 1:
         counter += 1
-print counter
+print "Optimal solutions: " + str((counter/runs)*100) + "%"
